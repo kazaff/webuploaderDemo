@@ -33,6 +33,14 @@
             var userInfo = {userId:"kazaff"};
             var uniqueFileName = null;
 
+            function getServer(type){   //测试用，根据不同类型的后端返回对应的请求地址
+                switch(type){
+                    case "php": return "./serverPHP/fileUpload.php"
+                    case "node": return "";
+                    case "java": return "";
+                }
+            }
+
             WebUploader.Uploader.register({
                 "before-send-file": "beforeSendFile"
                 , "before-send": "beforeSend"
@@ -112,7 +120,7 @@
 
 			var uploader = WebUploader.create({
 				swf: "Uploader.swf"
-				, server: "fileUpload.php"
+				, server: getServer("php")
 				, pick: "#picker"
 				, resize: false
 				, dnd: "#theList"

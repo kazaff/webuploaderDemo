@@ -9,7 +9,7 @@
 class FileUpload{
 
     //要配置的内容
-    private $path = "./uploads";
+    private $path = "../uploads";
     private $allowtype = array('jpg', 'gif', 'png', 'mp4', 'mp3');
     private $maxsize = 99999999999;
     private $israndname = true;
@@ -288,7 +288,7 @@ header("Pragma: no-cache");
 //用于断点续传，验证指定分块是否已经存在，避免重复上传
 if(isset($_POST['type'])){
     if($_POST['type'] == 'chunkCheck'){
-        $target = './uploads/'.$_POST['file'].'/'.$_POST['chunkIndex'];
+        $target = '../uploads/'.$_POST['file'].'/'.$_POST['chunkIndex'];
         if(file_exists($target) && filesize($target) == $_POST['size']){
             die('{"ifExist":1}');
         }
