@@ -30,16 +30,20 @@
 		</div>
 		
 		<script type="text/javascript">
-            var userInfo = {userId:"kazaff"};
-            var uniqueFileName = null;
+            var userInfo = {userId:"kazaff"};   //用户会话信息
+            var chunkSize = 5000 * 1024;        //分块大小
+            var uniqueFileName = null;          //文件唯一标识符
+            var md5Mark = null;
 
             function getServer(type){   //测试用，根据不同类型的后端返回对应的请求地址
                 switch(type){
                     case "php": return "./serverPHP/fileUpload.php"
-                    case "node": return "";
+                    case "node": return "http://localhost:3000/fileUpload";
                     case "java": return "";
                 }
             }
+
+            var backEndUrl = getServer("node");
 
             WebUploader.Uploader.register({
                 "before-send-file": "beforeSendFile"
@@ -55,17 +59,22 @@
                     }).then(function(val){
                         console.log("总耗时: "+((new Date().getTime()) - start)/1000);
 
+                        md5Mark = val;
+
                         $.ajax({
                             type: "POST"
-                            , url: "fileUpload.php"
+                            , url: backEndUrl
                             , data: {
-                                type: "md5Check"
+                                status: "md5Check"
                                 , md5: val
                             }
                             , cache: false
                             , timeout: 1000 //todo 超时的话，只能认为该文件不曾上传过
                             , dataType: "json"
                         }).then(function(data, textStatus, jqXHR){
+
+                            //console.log(data);
+
                             if(data.ifExist){   //若存在，这返回失败给WebUploader，表明该文件不需要上传
                                 task.reject();
 
@@ -86,14 +95,13 @@
                     return $.when(task);
                 }
                 , beforeSend: function(block){
-                    //console.log(block);
                     //分片验证是否已传过，用于断点续传
                     var task = new $.Deferred();
                     $.ajax({
                         type: "POST"
-                        , url: "fileUpload.php"
+                        , url: backEndUrl
                         , data: {
-                            type: "chunkCheck"
+                            status: "chunkCheck"
                             , file: uniqueFileName
                             , chunkIndex: block.chunk
                             , size: block.end - block.start
@@ -114,13 +122,42 @@
                     return $.when(task);
                 }
                 , afterSendFile: function(file){
-                    console.log("afterSendFile: "+file);
+                    var chunksTotal = 0;
+                    if((chunksTotal = Math.ceil(file.size/chunkSize)) > 1){
+                        //合并请求
+                        var task = new $.Deferred();
+                        $.ajax({
+                            type: "POST"
+                            , url: backEndUrl
+                            , data: {
+                                status: "chunksMerge"
+                                , file: uniqueFileName
+                                , chunks: chunksTotal
+                                , ext: file.ext
+                                , md5: md5Mark
+                            }
+                            , cache: false
+                            , dataType: "json"
+                        }).then(function(data, textStatus, jqXHR){
+
+                            task.resolve();
+                            file.path = data.path;
+                            UploadComlate(file);
+
+                        }, function(jqXHR, textStatus, errorThrown){
+                            task.reject();
+                        });
+
+                        return $.when(task);
+                    }else{
+                        UploadComlate(file);
+                    }
                 }
             });
 
 			var uploader = WebUploader.create({
 				swf: "Uploader.swf"
-				, server: getServer("php")
+				, server: backEndUrl
 				, pick: "#picker"
 				, resize: false
 				, dnd: "#theList"
@@ -145,7 +182,7 @@
                 , compress: false
 				, prepareNextFile: true
 				, chunked: true
-				, chunkSize: 5000 * 1024
+				, chunkSize: chunkSize
 				, threads: true
 				, formData: userInfo
 				, fileNumLimit: 1
@@ -197,11 +234,6 @@
 			
 			uploader.on("uploadProgress", function(file, percentage){
 				$("#" + file.id + " .percentage").text(percentage * 100 + "%");
-			});
-			
-			uploader.on("uploadSuccess", function(file, response){
-                file.path = response.path;
-                UploadComlate(file);
 			});
 
             function UploadComlate(file){

@@ -22,4 +22,7 @@
 *.RTF	 diff=astextplain
 
 .*
+.idea/
 uploads/
+serverNode/node_modules/
+serverNode/tmp/

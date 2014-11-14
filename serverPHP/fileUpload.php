@@ -1,4 +1,7 @@
 <?php
+/**
+ *  本代码用于测试webuploader相关特性，存在很大的优化空间，不建议用于正式项目。
+*/
 
 /**
  *  PHP通用文件上传类
@@ -80,36 +83,57 @@ class FileUpload{
             if($this->checkFileSize() && $this->checkFileType()){
                 $this->setNewFileName();
                 if ($this->copyFile()){
-                    if($this->isChunk){ //检查是否需要合并
-                        //检查对应文件夹中的分块文件数量是否和总数保持一致
-                        if((count(scandir($this->path)) - 2) == $info['chunks']){
-                            //进行合并
-                            $finalName = $uploadDir.'/'.($this->setOption('newFileName', $this->proRandName()));
-                            $file = fopen($finalName, 'wb');
-                            for($index = 0; $index < $info['chunks']; $index++){
-                                $tmpFile = $this->path.'/'.$index;
-                                $chunkFile = fopen($tmpFile, 'rb');
-                                $content = fread($chunkFile, filesize($tmpFile));
-                                fclose($chunkFile);
-                                fwrite($file, $content);
-
-                                //删除chunk文件
-                                unlink($tmpFile);
-                            }
-
-                            fclose($file);
-
-                            //删除chunk文件夹
-                            rmdir($this->path);
-                            unlink($uploadDir.'/'.$tmpName.'.tmp');
-                        }
-                    }
                     return $this->newFileName;
                 }
             }
         }
 
         $this->errorMess = $this->getError();
+        return false;
+    }
+
+    public function chunksMerge($uniqueFileName, $chunksTotal, $fileExt){
+
+        $targetDir = $this->path.'/'.$uniqueFileName;
+
+        //检查对应文件夹中的分块文件数量是否和总数保持一致
+        if($chunksTotal > 1 && (count(scandir($targetDir)) - 2) == $chunksTotal){
+            //同步锁机制
+            $lockFd = fopen($this->path.'/'.$uniqueFileName.'.lock', "w");
+            if(!flock($lockFd, LOCK_EX | LOCK_NB)){
+                fclose($lockFd);
+                return false;
+            }
+
+            //进行合并
+            $this->fileType = $fileExt;
+            $finalName = $this->path.'/'.($this->setOption('newFileName', $this->proRandName()));
+            $file = fopen($finalName, 'wb');
+            for($index = 0; $index < $chunksTotal; $index++){
+                $tmpFile = $targetDir.'/'.$index;
+                $chunkFile = fopen($tmpFile, 'rb');
+                $content = fread($chunkFile, filesize($tmpFile));
+                fclose($chunkFile);
+                fwrite($file, $content);
+
+                //删除chunk文件
+                unlink($tmpFile);
+            }
+
+            fclose($file);
+
+            //删除chunk文件夹
+            rmdir($targetDir);
+            unlink($this->path.'/'.$uniqueFileName.'.tmp');
+
+            //解锁
+            flock($lockFd, LOCK_UN);
+            fclose($lockFd);
+            unlink($this->path.'/'.$uniqueFileName.'.lock');
+
+            return $this->newFileName;
+
+        }
         return false;
     }
 
@@ -162,7 +186,7 @@ class FileUpload{
     }
 
 	//根据文件的相关信息为分块数据创建文件夹
-	//md5(当前登录用户的数据库id + 上传控件分配的id + 文件原始名称 + 文件类型 + 文件最后修改时间 + 文件总大小)
+	//md5(当前登录用户的数据库id + 文件原始名称 + 文件类型 + 文件最后修改时间 + 文件总大小)
 	private function setDirNameForChunks($info){
 		$str = ''.$info['userId'] . $info['name'] . $info['type'] . $info['lastModifiedDate'] . $info['size'];
 		return md5($str);
@@ -285,16 +309,18 @@ header("Cache-Control: no-store, no-cache, must-revalidate");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
+$uploader = new FileUpload();
+
 //用于断点续传，验证指定分块是否已经存在，避免重复上传
-if(isset($_POST['type'])){
-    if($_POST['type'] == 'chunkCheck'){
+if(isset($_POST['status'])){
+    if($_POST['status'] == 'chunkCheck'){
         $target = '../uploads/'.$_POST['file'].'/'.$_POST['chunkIndex'];
         if(file_exists($target) && filesize($target) == $_POST['size']){
             die('{"ifExist":1}');
         }
         die('{"ifExist":0}');
 
-    }elseif($_POST['type'] == 'md5Check'){
+    }elseif($_POST['status'] == 'md5Check'){
 
         //todo 模拟数据库查询
         $dataArr = array(
@@ -305,12 +331,15 @@ if(isset($_POST['type'])){
             die('{"ifExist":1, "path":"'.$dataArr[$_POST['md5']].'"}');
         }
         die('{"ifExist":0}');
+    }elseif($_POST['status'] == 'chunksMerge'){
+
+    	if($path = $uploader->chunksMerge($_POST['file'], $_POST['chunks'], $_POST['ext'])){
+    		die('{"status":1, "path": "'.$path.'"}');
+    	}
+    	die('{"status":0');
     }
 }
 
-
-
-$uploader = new FileUpload();
 if(($path = $uploader->upload('file', $_POST)) !== false){
     die('{"status":1, "path": "'.$path.'"}');
 }
