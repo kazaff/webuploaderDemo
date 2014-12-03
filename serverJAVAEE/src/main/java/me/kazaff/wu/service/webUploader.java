@@ -93,11 +93,16 @@ public class webUploader {
             lock.lock();
             try{
                 //检查是否满足合并条件：分片数量是否足够
-                if(chunks == this.getChunksNum(path + "/" +folder)){
+                File[] files = this.getChunks(path + "/" +folder);
+                if(chunks == files.length){
 
                     //管道合并
-                        //删除分片
+                    for(File file : files){
+                        
 
+                        //删除分片
+                    }
+                    files = null;
 
                     //todo 将MD5签名和合并后的文件path存入持久层
                     //this.saveMd52FileMap(md5,)
