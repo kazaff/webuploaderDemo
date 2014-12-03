@@ -4,6 +4,7 @@ package me.kazaff.wu.entity;
  * Created by kazaff on 2014/12/1.
  */
 public class FileInfo {
+
     private String md5;
     private int chunkIndex;
     private String size;

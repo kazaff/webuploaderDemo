@@ -3,6 +3,8 @@ package me.kazaff.wu.controller;
 import me.kazaff.wu.entity.FileInfo;
 import me.kazaff.wu.service.webUploader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -13,11 +15,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 
 @Controller
 @RequestMapping("/")
 public class FileUploadController {
+
+	private final static Logger log = LoggerFactory.getLogger(FileUploadController.class);
 
 	@Value("${upload.folder}")
 	private String uploadFolder;
@@ -34,11 +39,7 @@ public class FileUploadController {
 	//大文件上传
 	@RequestMapping(value = "fileUpload", method = RequestMethod.POST)
 	@ResponseBody
-	public String fileUpload(String status, FileInfo info,
-			@RequestParam(value = "file", required = false) MultipartFile file){
-
-System.out.println(status);
-System.out.println(info);
+	public String fileUpload(String status, FileInfo info, @RequestParam(value = "file", required = false) MultipartFile file){
 
 		if(status == null){	//文件上传
 			if(file != null && !file.isEmpty()){	//验证请求不会包含数据上传，所以避免NullPoint这里要检查一下file变量是否为null
@@ -53,15 +54,15 @@ System.out.println(info);
 					//将MD5签名和合并后的文件path存入持久层，注意这里这个需求导致需要修改webuploader.js源码3170行
 					//因为原始webuploader.js不支持为formData设置函数类型参数，这将导致不能在控件初始化后修改该参数
 					if(info.getChunks() <= 0){
-						if(wu.saveMd52FileMap(info.getMd5(), target.getName())){
-							//todo log 映射关系存储失败，但并不影响文件上传，只会导致日后该文件可能被重复上传而已
+						if(!wu.saveMd52FileMap(info.getMd5(), target.getName())){
+							log.error("文件[" + info.getMd5() + "=>" + target.getName() + "]保存关系到持久成失败，但并不影响文件上传，只会导致日后该文件可能被重复上传而已");
 						}
 					}
 
 					return "{\"status\": 1, \"path\": \"" + target.getName() + "\"}";
 
 				}catch(IOException ex){
-					//todo log
+					log.error("数据上传失败", ex);
 					return "{\"status\": 0, \"message\": \"数据上传失败\"}";
 				}
 			}
@@ -92,11 +93,11 @@ System.out.println(info);
 					return "{\"status\": 0, \"message\": \"" + wu.getErrorMsg() + "\"}";
 				}
 
-				return "{\"status\": 1, \"path\": \"" + path + "\"}";
+				return "{\"status\": 1, \"path\": \"" + path + "\", \"message\": \"中文测试\"}";
 			}
 		}
 
-		//todo log
+		log.error("请求参数不完整");
 		return "{\"status\": 0, \"message\": \"请求参数不完整\"}";
 	}
 }

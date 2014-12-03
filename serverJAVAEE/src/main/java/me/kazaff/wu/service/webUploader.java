@@ -3,18 +3,16 @@ package me.kazaff.wu.service;
 import me.kazaff.wu.entity.FileInfo;
 import me.kazaff.wu.util.fileLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -24,6 +22,8 @@ import java.util.concurrent.locks.Lock;
 @Service
 @Scope("prototype")
 public class webUploader {
+
+    private final static Logger log = LoggerFactory.getLogger(webUploader.class);
 
     /**
      * 错误详情
@@ -70,7 +70,7 @@ public class webUploader {
     /**
      * 分片合并操作
      * 要点:
-     *  > 管道合并: 避免把大文件全部读入内存
+     *  > 合并: NIO
      *  > 并发锁: 避免多线程同时触发合并操作
      *  > 清理: 合并清理不再需要的分片文件、文件夹、tmp文件
      * @param folder    分片文件所在的文件夹名称
@@ -93,24 +93,61 @@ public class webUploader {
             lock.lock();
             try{
                 //检查是否满足合并条件：分片数量是否足够
-                File[] files = this.getChunks(path + "/" +folder);
-                if(chunks == files.length){
+                //File[] files = this.getChunks(path + "/" +folder);
+                List<File> files = new ArrayList<File>(Arrays.asList(this.getChunks(path + "/" +folder)));
+                if(chunks == files.size()){
 
-                    //管道合并
+                    //按照名称排序文件，这里分片都是按照数字命名的
+                    Collections.sort(files, new Comparator<File>() {
+                        @Override
+                        public int compare(File o1, File o2) {
+                            if(Integer.valueOf(o1.getName()) < Integer.valueOf(o2.getName())){
+                                return -1;
+                            }
+                            return 1;
+                        }
+                    });
+
+                    //创建合并后的文件
+                    File outputFile = new File(path + "/" + this.randomFileName(ext));
+                    if(outputFile.exists()){
+                        log.error("文件[" + folder + "]随机命名冲突");
+                        this.setErrorMsg("文件随机命名冲突");
+                        return null;
+                    }
+                    outputFile.createNewFile();
+                    FileChannel outChannel = new FileOutputStream(outputFile).getChannel();
+
+                    //合并
+                    FileChannel inChannel;
                     for(File file : files){
-                        
+                        inChannel = new FileInputStream(file).getChannel();
+                        inChannel.transferTo(0, inChannel.size(), outChannel);
+                        inChannel.close();
 
                         //删除分片
+                        if(!file.delete()){
+                            log.error("分片[" + folder + "=>" + file.getName() + "]删除失败");
+                        }
                     }
+                    outChannel.close();
                     files = null;
 
-                    //todo 将MD5签名和合并后的文件path存入持久层
-                    //this.saveMd52FileMap(md5,)
+                    //将MD5签名和合并后的文件path存入持久层
+                    if(this.saveMd52FileMap(md5, outputFile.getName())){
+                        log.error("文件[" + md5 + "=>" + outputFile.getName() + "]保存关系到持久成失败，但并不影响文件上传，只会导致日后该文件可能被重复上传而已");
+                    }
 
                     //清理：文件夹，tmp文件
+                    this.cleanSpace(folder, path);
 
-
+                    return  outputFile.getName();
                 }
+            }catch(Exception ex){
+                log.error("数据分片合并失败", ex);
+                this.setErrorMsg("数据分片合并失败");
+                return null;
+
             }finally {
                 //解锁
                 lock.unlock();
@@ -122,7 +159,7 @@ public class webUploader {
         //去持久层查找对应md5签名，直接返回对应path
         target = this.md5Check(md5);
         if(target == null){
-            //todo log
+            log.error("文件[签名:" + md5 + "]数据不完整，可能该文件正在合并中");
             this.setErrorMsg("数据不完整，可能该文件正在合并中");
             return null;
         }
@@ -181,6 +218,29 @@ public class webUploader {
     }
 
     /**
+     * 清理分片上传的相关数据
+     * 文件夹，tmp文件
+     * @param folder    文件夹名称
+     * @param path      上传文件根路径
+     * @return
+     */
+    private boolean cleanSpace(String folder, String path){
+        //删除分片文件夹
+        File garbage = new File(path + "/" + folder);
+        if(!garbage.delete()){
+            return false;
+        }
+
+        //删除tmp文件
+        garbage = new File(path + "/" + folder + ".tmp");
+        if(!garbage.delete()){
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * 获取指定文件的所有分片
      * @param folder    文件夹路径
      * @return
@@ -222,7 +282,7 @@ public class webUploader {
             try {
                 tmpFile.mkdir();
             }catch(SecurityException ex){
-                //todo log
+                log.error("无法创建文件夹", ex);
                 this.setErrorMsg("无法创建文件夹");
                 return false;
             }
@@ -237,7 +297,7 @@ public class webUploader {
                 try{
                     tmpFile.createNewFile();
                 }catch(IOException ex){
-                    //todo log
+                    log.error("无法创建tmp文件", ex);
                     this.setErrorMsg("无法创建tmp文件");
                     return false;
                 }
@@ -275,11 +335,11 @@ public class webUploader {
 
             return sb.toString();
         }catch(NoSuchAlgorithmException ex){
-            //todo log
+            log.error("无法生成文件的MD5签名", ex);
             this.setErrorMsg("无法生成文件的MD5签名");
             return null;
         }catch(UnsupportedEncodingException ex){
-            //todo log
+            log.error("无法生成文件的MD5签名", ex);
             this.setErrorMsg("无法生成文件的MD5签名");
             return null;
         }
