@@ -314,7 +314,7 @@ $uploader = new FileUpload();
 //用于断点续传，验证指定分块是否已经存在，避免重复上传
 if(isset($_POST['status'])){
     if($_POST['status'] == 'chunkCheck'){
-        $target = '../uploads/'.$_POST['file'].'/'.$_POST['chunkIndex'];
+        $target = '../uploads/'.$_POST['name'].'/'.$_POST['chunkIndex'];
         if(file_exists($target) && filesize($target) == $_POST['size']){
             die('{"ifExist":1}');
         }
@@ -322,7 +322,7 @@ if(isset($_POST['status'])){
 
     }elseif($_POST['status'] == 'md5Check'){
 
-        //todo 模拟数据库查询
+        //todo 模拟持久层查询
         $dataArr = array(
             'b0201e4d41b2eeefc7d3d355a44c6f5a' => 'kazaff2.jpg'
         );
@@ -333,7 +333,8 @@ if(isset($_POST['status'])){
         die('{"ifExist":0}');
     }elseif($_POST['status'] == 'chunksMerge'){
 
-    	if($path = $uploader->chunksMerge($_POST['file'], $_POST['chunks'], $_POST['ext'])){
+    	if($path = $uploader->chunksMerge($_POST['name'], $_POST['chunks'], $_POST['ext'])){
+            //todo 把md5签名存入持久层，供未来的秒传验证
     		die('{"status":1, "path": "'.$path.'"}');
     	}
     	die('{"status":0');

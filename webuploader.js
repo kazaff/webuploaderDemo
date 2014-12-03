@@ -3167,7 +3167,8 @@
             RuntimeClient.call( this, 'Transport' );
     
             this._blob = null;
-            this._formData = opts.formData || {};
+            this._formData = $.isFunction(opts.formData)?opts.formData():opts.formData;//todo 因为原始webuploader.js不支持为formData设置函数类型参数，这将导致不能在控件初始化后修改该参数
+            this._formData = this._formData || {};
             this._headers = opts.headers || {};
     
             this.on( 'progress', this._timeout );

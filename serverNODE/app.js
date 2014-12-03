@@ -1,6 +1,6 @@
 /**
  * Created by kazaff on 2014/11/12.
- * ±¾´úÂëÓÃÓÚ²âÊÔwebuploaderµÄÏà¹ØÌØĞÔ£¬´æÔÚ´óÁ¿¿ÉÓÅ»¯¿Õ¼ä£¬²»½¨ÒéÊ¹ÓÃÔÚÕıÊ½ÏîÄ¿ÖĞ
+ * æœ¬ä»£ç ç”¨äºæµ‹è¯•webuploaderçš„ç›¸å…³ç‰¹æ€§ï¼Œå­˜åœ¨å¤§é‡å¯ä¼˜åŒ–ç©ºé—´ï¼Œä¸å»ºè®®ä½¿ç”¨åœ¨æ­£å¼é¡¹ç›®ä¸­
  */
 
 var formidable = require("formidable"),
@@ -14,10 +14,10 @@ var formidable = require("formidable"),
 
 http.createServer(function(req, res){
 
-    //ÓÃÓÚ·ÖÆ¬ºÏ²¢Ê±µÄÍ¬²½±êÊ¶Î»
+    //ç”¨äºåˆ†ç‰‡åˆå¹¶æ—¶çš„åŒæ­¥æ ‡è¯†ä½
     var lockMark = [];
 
-    //¿çÓò
+    //è·¨åŸŸ
     res.writeHead(200, {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST"
@@ -27,14 +27,14 @@ http.createServer(function(req, res){
 
     if(action == 'post' && req.url == "/fileUpload"){
 
-        var form = new formidable.IncomingForm({uploadDir:"tmp"});  //±ÜÃâEXDEVÎÊÌâ
+        var form = new formidable.IncomingForm({uploadDir:"tmp"});  //é¿å…EXDEVé—®é¢˜
         form.parse(req, function(err, fields, files){
 
             //console.log(util.inspect({fields: fields, files: files}));
 
-            if(_.isUndefined(fields.status)){ //·ÖÆ¬ÉÏ´«
-                //·ÖÆ¬µÄÔªÊı¾İ±ØĞëÒÔÎÄ¼şµÄĞÎÊ½£¨µ±È»Êı¾İ¿âÒ²ĞĞ£©³Ö¾Ã»¯£¬¶ø²»Ó¦¸Ã³Ö¾Ã»¯ÔÚnodeµÄÈ«¾Ö±äÁ¿ÖĞ£¬±ÜÃânode½ø³ÌÖØÆô¶øµ¼ÖÂµÄÔªÊı¾İ¶ªÊ§£¬ÕâÀï´¦ÀíµÄ·½Ê½²ÎÕÕphp°æ±¾µÄºó¶Ë
-                //¾ßÌåÏêÇé¿É¼ûhttps://github.com/kazaff/me.kazaff.article/blob/master/%E8%81%8A%E8%81%8A%E5%A4%A7%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0.md
+            if(_.isUndefined(fields.status)){ //åˆ†ç‰‡ä¸Šä¼ 
+                //åˆ†ç‰‡çš„å…ƒæ•°æ®å¿…é¡»ä»¥æ–‡ä»¶çš„å½¢å¼ï¼ˆå½“ç„¶æ•°æ®åº“ä¹Ÿè¡Œï¼‰æŒä¹…åŒ–ï¼Œè€Œä¸åº”è¯¥æŒä¹…åŒ–åœ¨nodeçš„å…¨å±€å˜é‡ä¸­ï¼Œé¿å…nodeè¿›ç¨‹é‡å¯è€Œå¯¼è‡´çš„å…ƒæ•°æ®ä¸¢å¤±ï¼Œè¿™é‡Œå¤„ç†çš„æ–¹å¼å‚ç…§phpç‰ˆæœ¬çš„åç«¯
+                //å…·ä½“è¯¦æƒ…å¯è§https://github.com/kazaff/me.kazaff.article/blob/master/%E8%81%8A%E8%81%8A%E5%A4%A7%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0.md
 
                 var upDir = "";
                 var isChunks = !(_.isUndefined(fields.chunks) || parseInt(fields.chunks) <= 0);
@@ -50,7 +50,7 @@ http.createServer(function(req, res){
                         var newFileName = "";
 
                         if(isChunks){
-                            //¸üĞÂtmpÎÄ¼şµÄĞŞ¸ÄÊ±¼ä
+                            //æ›´æ–°tmpæ–‡ä»¶çš„ä¿®æ”¹æ—¶é—´
                             fs.open(upDir+".tmp", "w", function(err, fd){
                                 if(err){
                                     //todo
@@ -94,9 +94,9 @@ http.createServer(function(req, res){
                 });
 
 
-            }else if(fields.status == "md5Check"){  //Ãë´«Ğ£Ñé
+            }else if(fields.status == "md5Check"){  //ç§’ä¼ æ ¡éªŒ
 
-                //todo Ä£ÄâÈ¥Êı¾İ¿âÖĞĞ£Ñémd5ÊÇ·ñ´æÔÚ
+                //todo æ¨¡æ‹Ÿå»æ•°æ®åº“ä¸­æ ¡éªŒmd5æ˜¯å¦å­˜åœ¨
                 if(fields.md5 == "b0201e4d41b2eeefc7d3d355a44c6f5a"){
                     res.end('{"ifExist":1, "path":"kazaff2.jpg"}');
                 }else{
@@ -104,28 +104,28 @@ http.createServer(function(req, res){
                 }
 
 
-            }else if(fields.status == "chunkCheck"){  //·ÖÆ¬Ğ£Ñé
+            }else if(fields.status == "chunkCheck"){  //åˆ†ç‰‡æ ¡éªŒ
 
-                fs.stat(path.join(config.uploadDir, fields.file, fields.chunkIndex), function(err, stats){
+                fs.stat(path.join(config.uploadDir, fields.name, fields.chunkIndex), function(err, stats){
                     if(err || stats.size != fields.size){
                         res.end('{"ifExist":0}');
                     }else{
                         res.end('{"ifExist":1}');
                     }
                 });
-            }else if(fields.status == "chunksMerge"){   //·ÖÆ¬ºÏ²¢
+            }else if(fields.status == "chunksMerge"){   //åˆ†ç‰‡åˆå¹¶
 
-                //Í¬²½»úÖÆ
-                if(_.contains(lockMark, fields.file)){
+                //åŒæ­¥æœºåˆ¶
+                if(_.contains(lockMark, fields.name)){
 
                     res.end('{"status":0}');
                 }else{
 
-                    lockMark.push(fields.file);
+                    lockMark.push(fields.name);
 
                     var newFileName = wu.randomFileName(fields.ext);
                     var targetStream = fs.createWriteStream(path.join(config.uploadDir, newFileName));
-                    wu.chunksMerge(path.join(config.uploadDir, fields.file), targetStream, fields.chunks, function(err){
+                    wu.chunksMerge(path.join(config.uploadDir, fields.name), targetStream, fields.chunks, function(err){
 
                         if(err){
                             //todo
@@ -135,23 +135,23 @@ http.createServer(function(req, res){
                         }
 
                         targetStream.end(function(){
-                            //É¾³ıÎÄ¼ş¼ĞºÍtmp
-                            fs.unlink(path.join(config.uploadDir, fields.file) + ".tmp", function(err){
+                            //åˆ é™¤æ–‡ä»¶å¤¹å’Œtmp
+                            fs.unlink(path.join(config.uploadDir, fields.name) + ".tmp", function(err){
                                 if(err){
                                     //todo
                                     console.error(err);
                                 }
                             });
-                            fs.rmdir(path.join(config.uploadDir, fields.file), function(err){
+                            fs.rmdir(path.join(config.uploadDir, fields.name), function(err){
                                 if(err){
                                     //todo
                                     console.error(err);
                                 }
                             });
 
-                            lockMark = _.without(lockMark, fields.file);
+                            lockMark = _.without(lockMark, fields.name);
 
-                            //todo ÕâÀïÆäÊµĞèÒª°Ñ¸ÃÎÄ¼şºÍÆäÇ°¶ËĞ£ÑéµÄmd5±£´æÔÚÊı¾İ¿âÖĞ£¬¹©Ãë´«¹¦ÄÜ¼ìË÷
+                            //todo è¿™é‡Œå…¶å®éœ€è¦æŠŠè¯¥æ–‡ä»¶å’Œå…¶å‰ç«¯æ ¡éªŒçš„md5ä¿å­˜åœ¨æ•°æ®åº“ä¸­ï¼Œä¾›ç§’ä¼ åŠŸèƒ½æ£€ç´¢
 
                             res.end('{"status":1, "path":"' + newFileName + '"}');
                         });

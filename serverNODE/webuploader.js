@@ -10,7 +10,7 @@ var crypto = require("crypto"),
 
 module.exports = {
     createUniqueFileName: function(info){
-        //md5(µ±Ç°µÇÂ¼ÓÃ»§µÄÊı¾İ¿âid + ÎÄ¼şÔ­Ê¼Ãû³Æ + ÎÄ¼şÀàĞÍ + ÎÄ¼ş×îºóĞŞ¸ÄÊ±¼ä + ÎÄ¼ş×Ü´óĞ¡)
+        //md5(å½“å‰ç™»å½•ç”¨æˆ·çš„æ•°æ®åº“id + æ–‡ä»¶åŸå§‹åç§° + æ–‡ä»¶ç±»å‹ + æ–‡ä»¶æœ€åä¿®æ”¹æ—¶é—´ + æ–‡ä»¶æ€»å¤§å°)
         var str = "" + info.userId + info.name + info.type + info.lastModifiedDate + info.size;
         return crypto.createHash("md5").update(str, "utf8").digest("hex");
     },
@@ -27,7 +27,7 @@ module.exports = {
             var originStream = fs.createReadStream(path.join(dir, index.toString()));
             originStream.pipe(targetSteam, {end: false});
             originStream.on("end", function(){
-                //É¾³ıÎÄ¼ş
+                //åˆ é™¤æ–‡ä»¶
                 fs.unlink(path.join(dir, index.toString()), function(err){
 
                     if(err){

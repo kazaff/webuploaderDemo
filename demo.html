@@ -30,7 +30,7 @@
 		</div>
 		
 		<script type="text/javascript">
-            var userInfo = {userId:"kazaff"};   //用户会话信息
+            var userInfo = {userId:"kazaff", md5:""};   //用户会话信息
             var chunkSize = 5000 * 1024;        //分块大小
             var uniqueFileName = null;          //文件唯一标识符
             var md5Mark = null;
@@ -39,11 +39,11 @@
                 switch(type){
                     case "php": return "./serverPHP/fileUpload.php"
                     case "node": return "http://localhost:3000/fileUpload";
-                    case "java": return "";
+                    case "java": return "http://localhost:8080/fileUpload";
                 }
             }
 
-            var backEndUrl = getServer("node");
+            var backEndUrl = getServer("java");
 
             WebUploader.Uploader.register({
                 "before-send-file": "beforeSendFile"
@@ -60,6 +60,7 @@
                         console.log("总耗时: "+((new Date().getTime()) - start)/1000);
 
                         md5Mark = val;
+                        userInfo.md5 = val;
 
                         $.ajax({
                             type: "POST"
@@ -102,7 +103,7 @@
                         , url: backEndUrl
                         , data: {
                             status: "chunkCheck"
-                            , file: uniqueFileName
+                            , name: uniqueFileName
                             , chunkIndex: block.chunk
                             , size: block.end - block.start
                         }
@@ -131,7 +132,7 @@
                             , url: backEndUrl
                             , data: {
                                 status: "chunksMerge"
-                                , file: uniqueFileName
+                                , name: uniqueFileName
                                 , chunks: chunksTotal
                                 , ext: file.ext
                                 , md5: md5Mark
@@ -139,6 +140,8 @@
                             , cache: false
                             , dataType: "json"
                         }).then(function(data, textStatus, jqXHR){
+
+                            //todo 检查响应是否正常
 
                             task.resolve();
                             file.path = data.path;
@@ -184,7 +187,7 @@
 				, chunked: true
 				, chunkSize: chunkSize
 				, threads: true
-				, formData: userInfo
+				, formData: function(){return userInfo;}
 				, fileNumLimit: 1
 				, fileSingleSizeLimit: 1000 * 1024 * 1024
 				, duplicate: true
