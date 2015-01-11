@@ -187,7 +187,7 @@
 				, chunked: true
 				, chunkSize: chunkSize
 				, threads: true
-				, formData: function(){return userInfo;}
+				, formData: function(){return $.extend(true, {}, userInfo);}
 				, fileNumLimit: 1
 				, fileSingleSizeLimit: 1000 * 1024 * 1024
 				, duplicate: true
