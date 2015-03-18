@@ -7,3 +7,5 @@ serverNode/tmp/
 serverJAVAEE/.idea/
 serverJAVAEE/target/
 serverJAVAEE/serverJAVAEE.iml
+/serverDubbox/target
+/serverDubbox/log

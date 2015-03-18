@@ -40,10 +40,11 @@
                     case "php": return "./serverPHP/fileUpload.php"
                     case "node": return "http://localhost:3000/fileUpload";
                     case "java": return "http://localhost:8080/fileUpload";
+                    case "dubbo": return "http://127.0.0.1:8888/fileUpload";
                 }
             }
 
-            var backEndUrl = getServer("java");
+            var backEndUrl = getServer("dubbo");
 
             WebUploader.Uploader.register({
                 "before-send-file": "beforeSendFile"
