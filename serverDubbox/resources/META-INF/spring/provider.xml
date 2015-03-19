@@ -8,8 +8,7 @@
     <dubbo:registry address="zookeeper://127.0.0.1:2181"/>
 
     <dubbo:protocol name="rest" port="8888" server="tomcat"
-                    extension="me.kazaff.wu.extension.CORSFilter,
-                    com.alibaba.dubbo.rpc.protocol.rest.support.LoggingFilter"/>
+                    extension="me.kazaff.wu.extension.CORSFilter"/>
 
     <dubbo:service interface="me.kazaff.wu.controller.FileUploadeService" ref="fileUploader" protocol="rest" />
     <bean id="fileUploader" class="me.kazaff.wu.controller.FileUploader" />

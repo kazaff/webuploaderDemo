@@ -2,8 +2,12 @@ package me.kazaff.wu.entity;
 
 import org.jboss.resteasy.annotations.providers.multipart.PartType;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.Encoded;
 import javax.ws.rs.FormParam;
+import javax.ws.rs.core.MediaType;
+import java.util.Arrays;
 
 /**
  * Created by kazaff on 2015/3/18.
@@ -18,8 +22,27 @@ public class FileUploadForm {
     private String type;
     private String lastModifiedDate;
     private String size;
+    private int chunks;
+    private int chunk;
 
-    public FileUploadForm() {
+    public int getChunks() {
+        return chunks;
+    }
+
+    @FormParam("chunks")
+    @DefaultValue("-1")
+    public void setChunks(int chunks) {
+        this.chunks = chunks;
+    }
+
+    public int getChunk() {
+        return chunk;
+    }
+
+    @FormParam("chunk")
+    @DefaultValue("-1")
+    public void setChunk(int chunk) {
+        this.chunk = chunk;
     }
 
     public String getUserId() {
@@ -101,5 +124,20 @@ public class FileUploadForm {
     @PartType("application/octet-stream")
     public void setFileData(byte[] fileData) {
         this.fileData = fileData;
+    }
+
+    @Override
+    public String toString() {
+        return "FileUploadForm{" +
+                ", userId='" + userId + '\'' +
+                ", md5='" + md5 + '\'' +
+                ", id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", type='" + type + '\'' +
+                ", lastModifiedDate='" + lastModifiedDate + '\'' +
+                ", size='" + size + '\'' +
+                ", chunks=" + chunks +
+                ", chunk=" + chunk +
+                '}';
     }
 }

@@ -5,6 +5,14 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd  http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <!--发现如果不加这配置，会导致无法正常使用@Autowired-->
-    <context:component-scan base-package="me.kazaff"/>
+    <context:component-scan base-package="me.kazaff.wu"/>
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:/configure.properties</value>
+            </list>
+        </property>
+    </bean>
 
 </beans>

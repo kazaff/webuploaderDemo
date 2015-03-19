@@ -16,6 +16,11 @@ public class Result {
     public Result() {
     }
 
+    public Result(int status, String message) {
+        this.status = status;
+        this.message = message;
+    }
+
     public Result(int status, String message, String path, boolean ifExist) {
         this.status = status;
         this.message = message;
